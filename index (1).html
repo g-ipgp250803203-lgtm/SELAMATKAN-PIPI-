@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Papa Zola: Selamatkan Pipi!</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--panel:#fffaf0;--ink:#2b2350;--sub:#6a5f8f;--ok:#1f9d55;--bad:#d64545;--acc:#ff9f1c;--acc2:#5b3df5;--bg:#1b1640}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#2a2459;--ink:#fff7e6;--sub:#c9c1f0;--bg:#100c2b}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Baloo 2","Comic Sans MS",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+header{width:100%;max-width:960px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px;color:#fff}
+h1{font-size:clamp(1.1rem,3.4vw,1.6rem);margin:0;font-weight:800}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dots{display:flex;gap:6px}
+.dot{width:36px;height:36px;border-radius:50%;border:3px solid #fff;background:transparent;color:#fff;font:700 1rem inherit;font-family:inherit;cursor:pointer}
+.dot.on{background:var(--acc);border-color:var(--acc);color:#2b2350}
+.dot.lock{opacity:.4}
+.iconbtn{width:36px;height:36px;border-radius:50%;border:3px solid #fff;background:transparent;color:#fff;cursor:pointer;font-size:1rem}
+#vol{width:80px;accent-color:var(--acc)}
+.score{color:#ffd23f;font-weight:800;font-size:1.1rem;min-width:70px;text-align:right}
+main{width:100%;max-width:960px;padding:0 12px 16px}
+.stage{position:relative;width:100%;aspect-ratio:16/9;perspective:900px;border-radius:22px;overflow:hidden;background:#000;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.world{position:absolute;inset:-4%;transform-style:preserve-3d;transition:transform .15s ease-out}
+.layer{position:absolute;inset:0;width:100%;height:100%}
+.caption{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.92);color:#2b2350;border-radius:14px;padding:4px 12px;font-weight:700;font-size:clamp(.75rem,2.2vw,1rem);z-index:3}
+.panel{margin-top:14px;background:var(--panel);border-radius:22px;padding:18px;box-shadow:0 10px 24px rgba(0,0,0,.3);text-align:center}
+.hint{margin:0 0 6px;color:var(--sub);font-weight:500}
+.sentence{font-size:clamp(1.3rem,4.4vw,2.2rem);font-weight:800;line-height:1.3;margin:4px auto 12px;max-width:760px}
+.sentence span{display:inline-block;margin:0 4px;padding:0 4px;border-radius:8px}
+.sentence .g{background:#c8f3d6;color:#0c5a2e}.sentence .r{background:#ffd3d3;color:#8d1d1d}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
+button.big{font:800 1.1rem inherit;font-family:inherit;border:0;border-radius:999px;padding:12px 22px;cursor:pointer;color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+button.big:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+button.big.locked{opacity:.4}
+button:focus-visible{outline:4px solid #fff;outline-offset:2px}
+.next{background:var(--ok)}.prev{background:#8b7fc7}
+#mic{width:84px;height:84px;border-radius:50%;border:0;background:var(--bad);color:#fff;font-size:2rem;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.28)}
+#mic.rec{animation:pulse 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,69,69,.7),0 6px 0 rgba(0,0,0,.28)}100%{box-shadow:0 0 0 24px rgba(214,69,69,0),0 6px 0 rgba(0,0,0,.28)}}
+.wave{display:none;gap:4px;height:34px;align-items:center}.wave.show{display:flex}
+.wave i{width:6px;background:var(--acc2);border-radius:3px;animation:bar .7s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}
+@keyframes bar{0%,100%{height:8px}50%{height:32px}}
+.result{min-height:2.6em;margin-top:12px;font-size:clamp(1.1rem,3.4vw,1.6rem);font-weight:800}
+.result.ok{color:var(--ok);animation:pop .5s}.result.bad{color:var(--bad)}
+.heard,.tries{font-weight:500;color:var(--sub);font-size:.95rem;margin-top:2px}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.confetti{position:fixed;top:-20px;width:10px;height:16px;z-index:50;pointer-events:none;animation:fall 2.2s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.ov{position:fixed;inset:0;background:rgba(16,12,43,.94);color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;z-index:40}
+.ov.show{display:flex}.ov h2{font-size:clamp(1.8rem,6vw,3rem);margin:0 0 8px}.ov p{max-width:520px;margin:0 0 18px;font-size:1.1rem}
+.cloud{animation:drift 40s linear infinite}.cloud.b{animation-duration:60s;animation-delay:-20s}
+@keyframes drift{from{transform:translateX(-200px)}to{transform:translateX(900px)}}
+.blink{animation:blink 1s steps(2) infinite}@keyframes blink{50%{opacity:.15}}
+.glow{animation:glow 2s ease-in-out infinite}@keyframes glow{50%{opacity:.55}}
+.wave-hand{transform-origin:0 0;animation:hand .6s ease-in-out infinite alternate}
+@keyframes hand{from{transform:rotate(-25deg)}to{transform:rotate(25deg)}}
+.bob{animation:bob .35s ease-in-out infinite alternate}.bob.slow{animation-duration:.7s}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.legA{transform-origin:0 0;animation:legA .35s ease-in-out infinite alternate}
+.legB{transform-origin:0 0;animation:legA .35s ease-in-out infinite alternate-reverse}
+.slow .legA,.slow .legB{animation-duration:.7s}
+@keyframes legA{from{transform:rotate(-35deg)}to{transform:rotate(35deg)}}
+.run{animation:runX 6s ease-in-out infinite alternate}@keyframes runX{to{transform:translateX(150px)}}
+.dust{animation:dust .6s linear infinite}
+@keyframes dust{from{opacity:.8;transform:translateX(0) scale(.6)}to{opacity:0;transform:translateX(-50px) scale(1.4)}}
+.sway{transform-origin:50% 100%;animation:sway 3s ease-in-out infinite alternate}@keyframes sway{to{transform:rotate(4deg)}}
+.rock{animation:rock 1.4s ease-in infinite}
+@keyframes rock{from{transform:translate(0,0)}to{transform:translate(-40px,160px)}}
+.hop{animation:hop .6s ease-out infinite alternate}@keyframes hop{to{transform:translateY(-45px)}}
+.grow{transform-box:fill-box;transform-origin:0 100%;animation:grow 1s ease-in-out infinite alternate}
+@keyframes grow{from{transform:scale(.7)}to{transform:scale(1.25)}}
+.float{animation:float 2s linear infinite}@keyframes float{from{transform:translateY(0);opacity:1}to{transform:translateY(-70px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:0s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<div class="ov show" id="start"><h2>🧪 Papa Zola: Selamatkan Pipi!</h2><p>Baca ayat dengan kuat dan jelas. Jika sebutan kamu betul, cerita akan diteruskan. Pastikan mikrofon dibenarkan.</p><button class="big next" id="go">▶ Mula Bermain</button></div>
+<div class="ov" id="end"><h2>🏆 Hebat! Kamu berjaya!</h2><p id="endmsg"></p><button class="big next" id="again">Main semula</button></div>
+<header>
+  <h1>Papa Zola: Selamatkan Pipi!</h1>
+  <div class="tools"><div class="dots" id="dots"></div><span class="score" id="score">⭐ 0</span>
+  <button class="iconbtn" id="mute" aria-label="Senyap/bunyi">🔊</button><input id="vol" type="range" min="0" max="100" value="60" aria-label="Volum"></div>
+</header>
+<main>
+  <div class="stage" id="stage"><div class="world" id="world"></div></div>
+  <section class="panel">
+    <p class="hint" id="hint">Baca ayat ini dengan kuat:</p>
+    <div class="sentence" id="sentence"></div>
+    <div class="row"><button id="mic" aria-label="Tekan dan sebut ayat">🎤</button><div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="result" id="result" aria-live="polite"></div>
+    <div class="heard" id="heard"></div><div class="tries" id="tries"></div>
+    <div class="row" style="margin-top:12px"><button class="big prev" id="prev">◀ Kembali</button><button class="big next locked" id="next">Seterusnya ▶</button></div>
+  </section>
+</main>
+<script>
+/* ===== DATA SITUASI (guru boleh tambah/ubah di sini) ===== */
+const SCENES=[
+ {text:"Pipi berada di dalam makmal di belakang bukit."},
+ {text:"Papa Zola berlari ke arah bukit untuk menyelamatkan Pipi."},
+ {text:"Papa Zola mendaki bukit yang curam."},
+ {text:"Papa Zola memanggil Pipi dengan suara yang kuat."},
+ {text:"Pipi gembira kerana Papa Zola datang menolongnya."}
+];
+let cur=0,done=[],tries=[],stars=[],muted=false,vol=.6,started=false,listening=false;
+const $=id=>document.getElementById(id);
+
+/* ===== BUNYI (WebAudio, dijana melalui kod) ===== */
+let AC,master;
+function ctx(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();setVol();master.connect(AC.destination)}if(AC.state==="suspended")AC.resume();return AC}
+function setVol(){if(master)master.gain.value=muted?0:Math.min(vol,1)*.55}
+function tone(f,t0=0,d=.15,type="sine",v=.15,f2,pan=0){try{const a=ctx(),o=a.createOscillator(),g=a.createGain(),p=a.createStereoPanner?a.createStereoPanner():null,t=a.currentTime+t0;
+ o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+ o.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(master)}else g.connect(master);o.start(t);o.stop(t+d+.05)}catch(e){}}
+function noise(d=.2,v=.1,fq=800,t0=0,pan=0){try{const a=ctx(),n=a.sampleRate*d,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
+ const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),t=a.currentTime+t0;s.buffer=b;f.type="lowpass";f.frequency.value=fq;
+ g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(f).connect(g).connect(master);s.start(t)}catch(e){}}
+const SFX={
+ pop:()=>tone(520,0,.08,"triangle",.12,880),
+ tick:()=>tone(1400,0,.03,"square",.015),
+ recStart:()=>{tone(440,0,.1,"triangle");tone(660,.1,.16,"triangle")},
+ recStop:()=>tone(500,0,.12,"triangle",.1,350),
+ unlock:()=>{tone(800,0,.06,"square",.07);tone(1200,.07,.1,"square",.07)},
+ bonk:()=>tone(200,0,.18,"sine",.15,120),
+ whoosh:()=>{try{const a=ctx(),p=a.createStereoPanner(),g=a.createGain();const n=a.sampleRate*.5,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
+  const s=a.createBufferSource(),f=a.createBiquadFilter();s.buffer=b;f.type="bandpass";f.frequency.setValueAtTime(400,a.currentTime);f.frequency.exponentialRampToValueAtTime(3000,a.currentTime+.45);
+  p.pan.setValueAtTime(-.9,a.currentTime);p.pan.linearRampToValueAtTime(.9,a.currentTime+.5);g.gain.setValueAtTime(.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.5);
+  s.connect(f).connect(g).connect(p).connect(master);s.start()}catch(e){}},
+ sparkle:()=>[1568,1976,2349,2637].forEach((f,i)=>tone(f,i*.07,.18,"sine",.06)),
+ ok:n=>{[523,659,784,1047].forEach((f,i)=>tone(f,i*.12,.3,"triangle",.17));SFX.sparkle();for(let i=0;i<n;i++)tone(900+i*150,.55+i*.18,.1,"triangle",.1,1400)},
+ bad:()=>{tone(330,0,.25,"sine",.1,260);tone(262,.22,.35,"sine",.1,200)},
+ win:()=>{[523,659,784,659,784,1047,1319].forEach((f,i)=>tone(f,i*.13,.4,"triangle",.17));for(let i=0;i<8;i++)noise(.08,.1,3000,1+i*.1)},
+ boing:(t=0,v=.14)=>tone(180,t,.3,"sine",v,520),
+ step:(p=0)=>noise(.07,.1,500,0,p),
+ bird:()=>{tone(2200,0,.08,"sine",.05,3000);tone(2800,.1,.08,"sine",.05,2000)}
+};
+/* bunyi pengenalan setiap situasi */
+const INTRO=[
+ ()=>{for(let i=0;i<4;i++)tone(300+i*80,i*.15,.2,"sine",.07,700)},
+ ()=>{SFX.whoosh();for(let i=0;i<4;i++)SFX.step(i%2?.3:-.3)},
+ ()=>{for(let i=0;i<3;i++)SFX.step(.2);tone(140,.6,.25,"triangle",.08,70);tone(120,.8,.25,"triangle",.07,60)},
+ ()=>{SFX.boing(0,.14);SFX.boing(.25,.07);SFX.boing(.5,.03);setTimeout(SFX.bird,700)},
+ ()=>{SFX.boing();SFX.boing(.3);SFX.sparkle();tone(1760,.7,.15,"sine",.08)}
+];
+/* bunyi latar berulang (dihentikan semasa merakam) */
+let amb=0;
+function ambTick(){if(!started||listening||muted||document.hidden)return;amb++;
+ if(cur===0){tone(70,0,.7,"sawtooth",.025);if(amb%2)tone(880,0,.05,"square",.03);if(amb%5===0)tone(300,0,.25,"sine",.05,700)}
+ else if(cur===1){SFX.step(amb%2?.3:-.3);if(amb%3===0)noise(.4,.02,1500)}
+ else if(cur===2){SFX.step(.2);if(amb%4===0)tone(150,0,.2,"triangle",.05,80)}
+ else if(cur===3){if(amb%4===0)SFX.bird();tone(60,0,.7,"sine",.02)}
+ else{if(amb%3===0)SFX.sparkle();if(amb%4===0)tone(1760,0,.1,"sine",.04)}}
+setInterval(ambTick,650);
+$("mute").onclick=()=>{muted=!muted;$("mute").textContent=muted?"🔇":"🔊";setVol();if(!muted)SFX.pop()};
+$("vol").oninput=e=>{vol=e.target.value/100;setVol()};
+document.addEventListener("mouseover",e=>{if(started&&e.target.closest("button"))SFX.tick()});
+
+/* ===== GRAFIK 3D ===== */
+const L=(z,inner)=>`<svg class="layer" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" style="transform:translateZ(${z}px) scale(${1+(-z/900)})">${inner}</svg>`;
+const SKY=[["#4aa8ff","#e6f8ff"],["#ff7a59","#ffe9a8"],["#ff9a5a","#ffe3b0"],["#4aa8ff","#e6f8ff"],["#5ec0ff","#fff3c4"]];
+const sky=i=>L(-300,`<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${SKY[i][0]}"/><stop offset="1" stop-color="${SKY[i][1]}"/></linearGradient></defs><rect width="800" height="450" fill="url(#sk)"/><circle cx="650" cy="${i===1||i===2?150:90}" r="45" fill="#ffe680"/><g fill="#fff" opacity=".9"><g class="cloud"><ellipse cx="100" cy="70" rx="50" ry="20"/><ellipse cx="135" cy="58" rx="35" ry="20"/></g><g class="cloud b"><ellipse cx="300" cy="110" rx="60" ry="22"/><ellipse cx="340" cy="96" rx="38" ry="22"/></g></g>`);
+const far=L(-200,`<path d="M0 300 Q120 190 260 290 T520 270 T800 300 V450H0Z" fill="#6cc4a1"/><path d="M0 340 Q200 250 380 330 T800 320 V450H0Z" fill="#4eb08a"/>`);
+const pipiFace=(x,y,s,cls,hand)=>`<g transform="translate(${x} ${y}) scale(${s})"><g class="${cls}"><circle r="19" fill="#ffd2a8"/><path d="M-20 -6Q0 -34 20 -6Q8 -14 -20 -6Z" fill="#ff7a1a"/><circle cx="-7" cy="-2" r="2.6" fill="#222"/><circle cx="7" cy="-2" r="2.6" fill="#222"/><path d="M-6 7Q0 12 6 7" stroke="#b33" stroke-width="2" fill="none"/>${hand?'<g transform="translate(18 10)"><rect class="wave-hand" x="0" y="-26" width="7" height="26" rx="3" fill="#ffd2a8"/></g>':''}</g></g>`;
+function lab(x,y,sc,pipi){return L(-110,`<g transform="translate(${x} ${y}) scale(${sc})"><rect x="0" y="40" width="220" height="150" rx="10" fill="#d8dcf0" stroke="#8f95c4" stroke-width="4"/><path d="M30 40A80 70 0 0 1 190 40Z" fill="#9aa4e8"/><rect x="108" y="-30" width="4" height="40" fill="#555"/><circle cx="110" cy="-34" r="7" fill="#ff3b3b" class="blink"/><rect x="25" y="70" width="80" height="60" rx="8" fill="#ffe28a" class="glow"/><rect x="25" y="70" width="80" height="60" rx="8" fill="none" stroke="#6b6fa8" stroke-width="5"/>${pipi?pipiFace(65,118,1,"",true):''}<rect x="140" y="95" width="55" height="95" rx="6" fill="#7a6ad8"/><text x="112" y="62" text-anchor="middle" font-size="16" font-weight="800" fill="#4a4f88" font-family="sans-serif">MAKMAL</text><circle cx="40" cy="30" r="6" fill="#7dffb2" class="glow"/><circle cx="170" cy="30" r="5" fill="#ff9bf0" class="glow"/></g>`)}
+const HILL=["M-20 450V250Q220 120 500 200Q700 160 820 290V450Z","M-20 450V270Q80 150 330 215Q520 150 820 300V450Z","M-20 450V330Q300 300 520 130Q620 40 820 120V450Z","M-20 450V250Q220 150 500 220Q700 190 820 300V450Z","M-20 450V250Q220 150 500 220Q700 190 820 300V450Z"];
+const hill=i=>L(-20,`<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58c46a"/><stop offset="1" stop-color="#2f8f4e"/></linearGradient></defs><path d="${HILL[i]}" fill="url(#hg)"/><path d="${HILL[i]}" fill="none" stroke="#9cf0a8" stroke-width="3" opacity=".6"/><path d="M-20 450Q300 330 800 420V450Z" fill="#8a6a42"/>`);
+const fore=L(50,`<g class="sway"><rect x="86" y="300" width="10" height="40" fill="#7a4b24"/><circle cx="91" cy="290" r="28" fill="#2f8f4e"/><circle cx="74" cy="305" r="20" fill="#3aa65c"/></g><g transform="translate(640 390)"><rect x="-2" width="4" height="40" fill="#2f8f4e"/><circle cy="-4" r="12" fill="#ff5d8f"/><circle cy="-4" r="5" fill="#ffe066"/></g><g transform="translate(700 410)"><rect x="-2" width="4" height="30" fill="#2f8f4e"/><circle cy="-4" r="10" fill="#ffd23f"/><circle cy="-4" r="4" fill="#ff9f1c"/></g>`);
+function papaBody(mode){const lg=mode==="run"||mode==="climb";return `<g class="${mode==="happy"?'bob':mode==='run'?'bob':mode==='climb'?'bob slow':''}"><ellipse cx="22" cy="132" rx="38" ry="8" fill="rgba(0,0,0,.25)"/><g transform="translate(20 92)"><rect class="${lg?'legA':''}" x="-6" width="12" height="38" rx="6" fill="#33406b"/></g><g transform="translate(34 92)"><rect class="${lg?'legB':''}" x="-6" width="12" height="38" rx="6" fill="#33406b"/></g><rect x="2" y="42" width="52" height="58" rx="18" fill="#2fa86b"/><g transform="translate(6 52)"><rect class="${lg?'legB':''}" x="-5" width="10" height="34" rx="5" fill="#f1c093"/></g><g transform="translate(50 52)"><rect class="${lg?'legA':''}" x="-5" width="10" height="34" rx="5" fill="#f1c093"/></g><circle cx="28" cy="26" r="26" fill="#f1c093"/><path d="M2 20Q10 -6 30 -2Q52 -4 54 20Q40 6 2 20Z" fill="#3b2a20"/><circle cx="38" cy="24" r="3" fill="#222"/><circle cx="20" cy="24" r="3" fill="#222"/><path d="M14 40Q28 34 42 40Q28 48 14 40Z" fill="#3b2a20"/><path d="M24 33Q31 38 38 33" stroke="#a33" stroke-width="2" fill="none"/></g>`}
+const bubble=(x,y,t,cls)=>`<g transform="translate(${x} ${y})"><g class="${cls}"><rect width="120" height="44" rx="16" fill="#fff"/><path d="M10 40L0 62L34 42Z" fill="#fff"/><text x="60" y="30" text-anchor="middle" font-size="22" font-weight="800" fill="#d64545" font-family="sans-serif">${t}</text></g></g>`;
+function actors(i){
+ if(i===1)return L(90,`<g transform="translate(120 250)"><g class="run">${papaBody("run")}<g class="dust"><circle cx="-8" cy="128" r="9" fill="#e9d3a8"/></g><g class="dust" style="animation-delay:.3s"><circle cx="-8" cy="124" r="7" fill="#e9d3a8"/></g></g>${bubble(180,-10,"Pipi!","")}</g>`);
+ if(i===2)return L(90,`<g transform="translate(250 260) rotate(-22)">${papaBody("climb")}</g><g fill="#8a8a99"><circle class="rock" cx="560" cy="150" r="9"/><circle class="rock" cx="600" cy="130" r="6" style="animation-delay:.5s"/><circle class="rock" cx="520" cy="190" r="7" style="animation-delay:.9s"/></g>`);
+ if(i===3)return L(90,`<g transform="translate(160 250)">${papaBody("stand")}${bubble(70,-30,"PIPI!!","grow")}</g>`);
+ if(i===4)return L(90,`<g transform="translate(110 255)">${papaBody("happy")}</g>${pipiFace(300,330,1.5,"hop",false)}<g font-size="30"><text class="float" x="250" y="300">❤️</text><text class="float" x="340" y="290" style="animation-delay:.7s">⭐</text><text class="float" x="300" y="300" style="animation-delay:1.3s">💖</text></g>`);
+ return"";
+}
+const LAB=[[520,175,1,1],[95,195,.6,1],[520,45,.45,1],[300,95,1.2,1],[520,130,.9,0]];
+function build(i){const l=LAB[i];$("world").innerHTML=sky(i)+far+lab(l[0],l[1],l[2],l[3])+hill(i)+fore+actors(i)+`<div class="caption">Situasi ${i+1}</div>`}
+
+/* ===== PAPARAN & NAVIGASI ===== */
+const starTxt=()=>"⭐ "+stars.reduce((a,b)=>a+(b||0),0);
+function render(){build(cur);
+ $("sentence").innerHTML=SCENES[cur].text.split(" ").map(w=>`<span>${w}</span>`).join(" ");
+ $("result").textContent="";$("result").className="result";$("heard").textContent="";
+ $("tries").textContent=tries[cur]?`Percubaan: ${tries[cur]}`:"";
+ $("next").classList.toggle("locked",!done[cur]);$("prev").classList.toggle("locked",cur===0);
+ $("next").textContent=cur===SCENES.length-1?"Selesai ★":"Seterusnya ▶";
+ $("hint").textContent="Baca ayat ini dengan kuat:";$("score").textContent=starTxt();
+ [...$("dots").children].forEach((d,i)=>{d.classList.toggle("on",i===cur);d.classList.toggle("lock",i>cur&&!done[i-1])})}
+SCENES.forEach((_,i)=>{const b=document.createElement("button");b.className="dot";b.textContent=i+1;b.setAttribute("aria-label","Situasi "+(i+1));
+ b.onclick=()=>{if(i<=cur||done[i-1])go(i);else{SFX.bonk();$("hint").textContent="Siapkan situasi sebelum ini dahulu."}};$("dots").appendChild(b)});
+function go(i){SFX.whoosh();cur=i;render();setTimeout(INTRO[i],350)}
+function reset(){done=[];tries=[];stars=[]}
+$("go").onclick=()=>{ctx();started=true;$("start").classList.remove("show");SFX.pop();reset();render();setTimeout(INTRO[0],300)};
+$("prev").onclick=()=>{if(cur>0){go(cur-1)}else SFX.bonk()};
+$("next").onclick=()=>{if(!done[cur]){SFX.bonk();$("hint").textContent="Sebut ayat dengan betul dahulu.";return}SFX.pop();
+ if(cur<SCENES.length-1)go(cur+1);else{SFX.win();confetti(70);const t=stars.reduce((a,b)=>a+b,0);$("endmsg").textContent=`Jumlah bintang: ${t} daripada ${SCENES.length*3}. Kamu telah menyelamatkan Pipi dengan sebutan yang jelas!`;$("end").classList.add("show")}};
+$("again").onclick=()=>{$("end").classList.remove("show");SFX.pop();reset();cur=0;render();setTimeout(INTRO[0],300)};
+$("stage").addEventListener("pointermove",e=>{const r=$("stage").getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;$("world").style.transform=`rotateY(${x*10}deg) rotateX(${-y*8}deg)`});
+$("stage").addEventListener("pointerleave",()=>$("world").style.transform="");
+
+/* ===== PENGECAMAN SUARA ===== */
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function lev(a,b){const m=[...Array(a.length+1)].map((_,i)=>[i]);for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+const sim=(a,b)=>1-lev(a,b)/Math.max(a.length,b.length,1);
+function check(alts){
+ const target=norm(SCENES[cur].text);let best="",score=0;
+ alts.forEach(t=>{const s=sim(norm(t),target);if(s>=score){score=s;best=t}});
+ const hw=norm(best).split(" ");
+ [...$("sentence").children].forEach(sp=>sp.className=hw.includes(norm(sp.textContent))?"g":"r");
+ $("heard").textContent=best?`Saya dengar: “${best}”`:"";
+ tries[cur]=(tries[cur]||0)+1;$("tries").textContent=`Percubaan: ${tries[cur]}`;
+ const r=$("result");
+ if(score>=.82){const n=tries[cur]===1?3:tries[cur]===2?2:1;if(!done[cur])stars[cur]=n;done[cur]=true;
+  r.className="result ok";r.textContent="🎉 Tahniah jawapan anda tepat";SFX.ok(stars[cur]);confetti(40);
+  $("next").classList.remove("locked");setTimeout(SFX.unlock,900);$("score").textContent=starTxt();render2()}
+ else{r.className="result bad";r.textContent="Cuba lagi! Perkataan merah perlu disebut dengan jelas.";SFX.bad()}}
+function render2(){[...$("dots").children].forEach((d,i)=>d.classList.toggle("lock",i>cur&&!done[i-1]))}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+function stopUI(){listening=false;$("mic").classList.remove("rec");$("wave").classList.remove("show")}
+$("mic").onclick=()=>{
+ if(!SR){$("result").className="result bad";$("result").textContent="Pelayar ini tidak menyokong rakaman suara. Gunakan Chrome atau Edge.";SFX.bonk();return}
+ if(listening){rec&&rec.stop();return}
+ rec=new SR();rec.lang="ms-MY";rec.interimResults=false;rec.maxAlternatives=5;
+ rec.onstart=()=>{listening=true;$("mic").classList.add("rec");$("wave").classList.add("show");$("result").className="result";$("result").textContent="Sedang mendengar… sila sebut ayat.";SFX.recStart()};
+ rec.onresult=e=>check([...e.results[0]].map(a=>a.transcript));
+ rec.onerror=e=>{stopUI();$("result").className="result bad";$("result").textContent=e.error==="not-allowed"||e.error==="service-not-allowed"?"Mikrofon disekat. Klik ikon mikrofon/mangga di bar alamat dan pilih Allow. Jika masih gagal, buka fail HTML terus dalam Chrome.":e.error==="no-speech"?"Tiada suara didengar. Cuba lagi.":"Ralat rakaman: "+e.error;SFX.bad()};
+ rec.onend=()=>{if(listening){SFX.recStop()}stopUI()};
+ try{listening=true;rec.start()}catch(e){stopUI()}};
+function confetti(n){const c=["#ff9f1c","#5b3df5","#1f9d55","#ff5d8f","#3b82f6","#ffd23f"];for(let i=0;i<n;i++){const d=document.createElement("div");d.className="confetti";d.style.left=Math.random()*100+"vw";d.style.background=c[i%c.length];d.style.animationDelay=Math.random()*.6+"s";d.style.animationDuration=1.8+Math.random()*1.4+"s";document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}}
+build(0);
+</script>
+</body>
+</html>
